@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Local environment files
+set_env.sh
+.env
+*.env
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
