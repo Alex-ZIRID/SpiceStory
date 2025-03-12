@@ -22,7 +22,7 @@ export class HomeComponent implements OnInit {
   }
 
   fetchFeaturedRecipe(): void {
-    this.http.get('http://localhost:5001/api/recipes').subscribe({
+    this.http.get('${environment.apiUrl}/api/recipes').subscribe({
       next: (data: any) => {
         if (data.length > 0) {
           this.featuredRecipe = data[Math.floor(Math.random() * data.length)];

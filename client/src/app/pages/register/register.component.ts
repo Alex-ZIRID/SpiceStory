@@ -40,7 +40,7 @@ export class RegisterComponent {
     }
 
     const { name, email, password } = this.registerForm.value;
-    this.http.post('http://localhost:5001/api/auth/register', { name, email, password }).subscribe({
+    this.http.post('${environment.apiUrl}/api/auth/register', { name, email, password }).subscribe({
       next: () => {
         
         sessionStorage.setItem('welcomeMessage', `Welcome ${name}! Please log in to access our recipe world!`);

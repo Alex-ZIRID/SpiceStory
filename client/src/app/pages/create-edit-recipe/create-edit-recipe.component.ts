@@ -21,7 +21,7 @@ export class CreateEditRecipeComponent implements OnInit {
   };
   isEditing = false;
   recipeId: string | null = null;
-  apiUrl = 'http://localhost:5001/api/recipes';  
+  apiUrl = '${environment.apiUrl}/api/recipes';  
   token: string | null = localStorage.getItem('token'); 
 
   constructor(

@@ -26,7 +26,7 @@ export class SavedRecipesComponent implements OnInit {
   }
 
   fetchRecipes(): void {
-    this.http.get<any[]>('http://localhost:5001/api/recipes').subscribe({
+    this.http.get<any[]>('${environment.apiUrl}/api/recipes').subscribe({
       next: (data) => {
         if (Array.isArray(data) && data.length > 0) {
           this.recipes = data.map((recipe) => ({

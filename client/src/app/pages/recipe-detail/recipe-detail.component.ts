@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { CommentSectionComponent } from '../../components/comment-section/comment-section.component';
 
 @Component({
@@ -29,7 +30,7 @@ export class RecipeDetailComponent implements OnInit {
   }
 
   fetchRecipe(recipeId: string): void {
-    this.http.get(`http://localhost:5001/api/recipes/${recipeId}`).subscribe({
+    this.http.get(`${environment.apiUrl}/api/recipes/${recipeId}`).subscribe({
       next: (data: any) => {
         if (data) {
           this.recipe = data;

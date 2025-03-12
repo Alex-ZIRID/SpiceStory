@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 import { RecipeCardComponent } from '../../components/recipe-card/recipe-card.component';
 
 @Component({
@@ -30,7 +31,7 @@ export class ProfileComponent implements OnInit {
   }
 
   fetchUserProfile(): void {
-    this.http.get('http://localhost:5001/api/auth/profile', {
+    this.http.get('${environment.apiUrl}/api/auth/profile', {
       headers: { Authorization: `Bearer ${this.token}` }
     }).subscribe({
       next: (data: any) => {
@@ -49,7 +50,7 @@ export class ProfileComponent implements OnInit {
   }
 
   fetchAllRecipes(): void {
-    this.http.get('http://localhost:5001/api/recipes', {
+    this.http.get('${environment.apiUrl}/api/recipes', {
       headers: { Authorization: `Bearer ${this.token}` }
     }).subscribe({
       next: (data: any) => {
@@ -62,7 +63,7 @@ export class ProfileComponent implements OnInit {
 
   deleteRecipe(recipeId: number): void {
     if (confirm('Are you sure you want to delete this recipe?')) {
-      this.http.delete(`http://localhost:5001/api/recipes/${recipeId}`, {
+      this.http.delete(`${environment.apiUrl}/api/recipes/${recipeId}`, {
         headers: { Authorization: `Bearer ${this.token}` }
       }).subscribe({
         next: () => {

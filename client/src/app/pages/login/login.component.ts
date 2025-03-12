@@ -47,7 +47,7 @@ export class LoginComponent implements OnInit {
       return;
     }
     console.log("Attempting Login with:", this.loginForm.value);// Debugging
-    this.http.post('http://localhost:5001/api/auth/login', this.loginForm.value).subscribe(
+    this.http.post('${environment.apiUrl}/api/auth/login', this.loginForm.value).subscribe(
       (response: any) => {
         console.log("Login Successful:", response);  // Debugging
         localStorage.setItem('token', response.token);
@@ -60,27 +60,27 @@ export class LoginComponent implements OnInit {
     );
   }
 
-  // Navigate to the Register Page
+  
   navigateToRegister(): void {
     this.router.navigate(['/register']);
   }
 
   logout(): void {
-    console.log('🔴 Logging out...'); // Step 1: Check if function runs
+    console.log('🔴 Logging out...'); 
   
     localStorage.removeItem('token');
     console.log('🟢 Token removed from localStorage:', localStorage.getItem('token')); // Step 2: Should log null if removed
   
     sessionStorage.clear();
-    console.log('🟢 Session storage cleared'); // Step 3: Check if session is cleared
+    console.log('🟢 Session storage cleared'); 
   
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    console.log('🟢 Cookie cleared'); // Step 4: Check if cookies were cleared
+    console.log('🟢 Cookie cleared'); 
   
     setTimeout(() => {
-      console.log('🟢 Redirecting to login...'); // Step 5: Make sure this runs
+      console.log('🟢 Redirecting to login...'); 
       this.router.navigate(['/login']).then(() => {
-        window.location.reload();  // Hard refresh to clear in-memory state
+        window.location.reload();  
       });
     }, 100);
   }
