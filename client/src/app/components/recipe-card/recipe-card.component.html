@@ -1,0 +1,10 @@
+<div class="recipe-card" *ngIf="recipe">
+  <img [src]="recipe.image_url" alt="{{ recipe.title }}" class="recipe-image" />
+  <div class="recipe-details">
+    <h3>{{ recipe.title }}</h3>
+    <p>{{ recipe.description }}</p>
+    <button routerLink="/recipe/{{ recipe.id }}" class="view-recipe-btn">
+      <mat-icon>restaurant</mat-icon> View Recipe
+    </button>
+  </div>
+</div>

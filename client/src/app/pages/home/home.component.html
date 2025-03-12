@@ -1,0 +1,27 @@
+<div class="home-container">
+  <h1>Welcome to SpiceStory!</h1>
+  <p>Discover, share, and save your favorite recipes.</p>
+
+  <!-- Home Page Buttons -->
+  <div class="home-buttons">
+    <button (click)="navigateTo('/saved-recipes')" class="home-btn">
+      <mat-icon>book</mat-icon> Browse Recipes
+    </button>
+    <button (click)="navigateTo('/create-recipe')" class="home-btn">
+      <mat-icon>add_circle</mat-icon> Add Recipe
+    </button>
+    <button (click)="navigateTo('/profile')" class="home-btn">
+      <mat-icon>person</mat-icon> View Profile
+    </button>
+  </div>
+
+  <h2>✨ Featured Recipe</h2>
+
+  <div *ngIf="featuredRecipe; else noRecipe">
+    <app-recipe-card [recipe]="featuredRecipe"></app-recipe-card>
+  </div>
+
+  <ng-template #noRecipe>
+    <p>No featured recipe available.</p>
+  </ng-template>
+</div>

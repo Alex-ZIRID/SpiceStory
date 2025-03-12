@@ -1,0 +1,26 @@
+<div class="recipe-detail-container">
+  <h1>{{ recipe?.title }}</h1>
+  <img
+    [src]="recipe?.image_url"
+    alt="{{ recipe?.title }}"
+    class="recipe-image"
+  />
+  <p><strong>Author:</strong> {{ recipe?.author }}</p>
+
+  <h3>Description</h3>
+  <p>{{ recipe?.description }}</p>
+
+  <h3>Ingredients</h3>
+  <ul>
+    <li *ngFor="let ingredient of recipe?.ingredients">{{ ingredient }}</li>
+  </ul>
+
+  <h3>Instructions</h3>
+  <p>{{ recipe?.instructions }}</p>
+
+  <button *ngIf="recipe?.user_id === userId" (click)="deleteRecipe()">
+    Delete Recipe
+  </button>
+
+  <app-comment-section [recipeId]="recipe?.id"></app-comment-section>
+</div>

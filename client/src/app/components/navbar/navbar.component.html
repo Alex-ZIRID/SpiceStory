@@ -1,0 +1,19 @@
+<mat-toolbar color="primary" class="navbar">
+  <!-- Left: Logo -->
+  <div class="left-container">
+    <a routerLink="/" class="logo-link">
+      <img src="assets/logo.png" alt="SpiceStory Logo" class="logo" />
+      <span class="logo-text">SpiceStory: Where Every Recipe Tells a Tale</span>
+    </a>
+  </div>
+
+  <!-- Right: Login/Register -->
+  <div class="right-container">
+    <div class="login-container" (click)="navigateToLogin()">
+      <button mat-icon-button class="login-button">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+      <span class="auth-text">Login / Register</span>
+    </div>
+  </div>
+</mat-toolbar>

@@ -1,0 +1,83 @@
+.recipe-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  background-color: #fff3e0;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 90%;
+}
+
+.recipe-image {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.recipe-details {
+  margin-top: 10px;
+}
+
+.view-recipe-btn {
+  background-color: #d35400;
+  color: white;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 50%;
+  margin: 10px auto;
+}
+
+.view-recipe-btn:hover {
+  background-color: #a84300;
+}
+mat-icon {
+  font-size: 20px;
+  color: white;
+}
+.comment-section {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.comment-input-container {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.comment-input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #d35400;
+  border-radius: 5px;
+  font-size: 14px;
+  background-color: #fff;
+}
+
+.add-comment-btn {
+  background-color: #d35400;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: 0.3s;
+}
+
+.add-comment-btn:hover {
+  background-color: #a84300;
+}

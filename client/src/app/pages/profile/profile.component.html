@@ -1,0 +1,28 @@
+<div class="profile-container">
+  <h1>Welcome, {{ user?.name }}!</h1>
+
+  <h2>Your Recipes</h2>
+  <div class="recipe-list" *ngIf="userRecipes.length; else noRecipes">
+    <div class="recipe-item" *ngFor="let recipe of userRecipes">
+      <app-recipe-card [recipe]="recipe"></app-recipe-card>
+    </div>
+  </div>
+
+  <ng-template #noRecipes>
+    <p>You haven't added any recipes yet.</p>
+    <button routerLink="/create-recipe" class="add-recipe-btn">
+      ➕ Add Your First Recipe
+    </button>
+  </ng-template>
+
+  <h2 *ngIf="otherRecipes.length > 0">Other Recipes</h2>
+  <div class="recipe-list" *ngIf="otherRecipes.length; else noOtherRecipes">
+    <div class="recipe-item" *ngFor="let recipe of otherRecipes">
+      <app-recipe-card [recipe]="recipe"></app-recipe-card>
+    </div>
+  </div>
+
+  <ng-template #noOtherRecipes>
+    <p>No other recipes available.</p>
+  </ng-template>
+</div>

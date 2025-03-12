@@ -1,0 +1,9 @@
+<form (ngSubmit)="submitRecipe()">
+  <input [(ngModel)]="title" name="title" placeholder="Recipe Title" required />
+  <textarea
+    [(ngModel)]="description"
+    name="description"
+    placeholder="Recipe Description"
+  ></textarea>
+  <button type="submit">Submit</button>
+</form>

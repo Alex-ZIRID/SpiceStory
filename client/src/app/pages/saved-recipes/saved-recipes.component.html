@@ -1,0 +1,14 @@
+<div class="recipes-container">
+  <h2>Recipes</h2>
+
+  <div *ngIf="recipes.length === 0" class="no-recipes">
+    <p>No recipes found. Start by adding one!</p>
+  </div>
+
+  <div class="recipes-grid">
+    <app-recipe-card
+      *ngFor="let recipe of recipes"
+      [recipe]="recipe"
+    ></app-recipe-card>
+  </div>
+</div>

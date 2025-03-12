@@ -1,0 +1,76 @@
+.recipe-form-container {
+    max-width: 800px;
+    width: 90%;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #fff3e0;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    color: #5a3e1b;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+  
+    /* Enable scrolling */
+    max-height: calc(100vh - 120px); 
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 100px;
+  }
+  
+  /* Form layout */
+  form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 80px; 
+  }
+  
+  /* Labels */
+  label {
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    display: block;
+    padding-left: 5px;
+  }
+  
+  /* Inputs & Textareas */
+  input,
+  textarea {
+    width: 90%;
+    padding: 12px;
+    border: 2px solid #d35400;
+    border-radius: 5px;
+    background-color: #fffaf0;
+    font-size: 16px;
+    margin: 0 auto;
+    display: block;
+  }
+  
+  /* Make textareas take more space */
+  textarea {
+    min-height: 100px;
+    resize: vertical;
+  }
+  
+  /* Submit button */
+  button {
+    background-color: #d35400;
+    color: white;
+    padding: 12px 15px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    font-size: 16px;
+    transition: 0.3s;
+    width: 90%;
+  }
+  
+  button:hover {
+    background-color: #a84300;
+  }

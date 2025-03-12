@@ -1,0 +1,61 @@
+<div class="login-container">
+  <h2>Login to SpiceStory</h2>
+
+  <form [formGroup]="loginForm" (ngSubmit)="login()">
+    <!-- Email Field -->
+    <div class="input-group">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        placeholder="Enter your email"
+        required
+      />
+      <div
+        class="error"
+        *ngIf="
+          loginForm.controls['email'].invalid &&
+          loginForm.controls['email'].touched
+        "
+      >
+        Valid email is required.
+      </div>
+    </div>
+
+    <!-- Password Field -->
+    <div class="input-group">
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        formControlName="password"
+        placeholder="Enter your password"
+        required
+      />
+      <div
+        class="error"
+        *ngIf="
+          loginForm.controls['password'].invalid &&
+          loginForm.controls['password'].touched
+        "
+      >
+        Password must be at least 6 characters.
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <!-- Login Button -->
+    <button type="submit" [disabled]="loginForm.invalid">Login</button>
+  </form>
+
+  <!-- Redirect to Register -->
+  <p class="register-link">
+    Don't have an account?
+    <button class="register-button" (click)="navigateToRegister()">
+      Register here
+    </button>
+  </p>
+</div>

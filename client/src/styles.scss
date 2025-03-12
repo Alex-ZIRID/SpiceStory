@@ -1,0 +1,87 @@
+// Brand colors
+$primary-color: #ffffff;  // White 
+$secondary-color: #d35400; // Dark Orange
+$accent-color: #f39c12;  // Light Orange
+$darker-accent-color: #c87f0f;  // Hover button darker orange
+$text-color: #5a3e1b;  // Dark brown for contrast
+
+// Global Styles
+body {
+  background-color: $primary-color;  
+  color: $text-color;
+  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+// Top banner
+.top-banner {
+  background: url("assets/topbanner.png") repeat-x center top;
+  background-size: cover;
+  height: 200px; 
+  width: 100%;
+}
+
+// Main content (between banners)
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px;
+  overflow-y: auto; 
+  max-height: calc(100vh - 340px);
+}
+
+// Bottom banner
+.bottom-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: url("assets/bottombanner.png") repeat-x center bottom;
+  background-size: cover;
+}
+
+// Navbar
+.navbar {
+  background-color: $secondary-color;
+  color: $text-color;
+  padding: 10px;
+}
+
+// Buttons
+button {
+  background-color: $accent-color;
+  color: $text-color;
+  border-radius: 8px;
+  padding: 10px 15px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: $darker-accent-color;
+  }
+}
+
+// Logo Styling
+.logo {
+  height: 50px;
+  margin-right: 10px;
+}
+
+// Import Montserrat font
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
+// Apply globally
+body {
+  font-family: 'Montserrat', sans-serif;
+}

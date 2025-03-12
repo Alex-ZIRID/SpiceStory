@@ -1,0 +1,28 @@
+<div class="recipe-form-container">
+  <h1>{{ isEditing ? "Edit Recipe" : "Create Recipe" }}</h1>
+
+  <form (ngSubmit)="submitRecipe()">
+    <label>Title:</label>
+    <input type="text" [(ngModel)]="recipe.title" name="title" required />
+
+    <label>Description:</label>
+    <textarea
+      [(ngModel)]="recipe.description"
+      name="description"
+      required
+    ></textarea>
+
+    <label>Ingredients (comma-separated):</label>
+    <input type="text" [(ngModel)]="recipe.ingredients" name="ingredients" />
+
+    <label>Instructions:</label>
+    <textarea [(ngModel)]="recipe.instructions" name="instructions"></textarea>
+
+    <label>Image URL:</label>
+    <input type="text" [(ngModel)]="recipe.image_url" name="image_url" />
+
+    <div class="button-container">
+      <button type="submit">Create Recipe</button>
+    </div>
+  </form>
+</div>

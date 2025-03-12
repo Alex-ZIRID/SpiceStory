@@ -1,0 +1,33 @@
+
+.comment-section {
+  .comment-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .comment-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #d35400;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: #fff;
+  }
+
+  .comment-button {
+    background-color: #d35400 !important;
+    color: white !important;
+    padding: 10px 15px !important;
+    border: none !important;
+    border-radius: 5px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: 0.3s !important;
+  }
+
+  .comment-button:hover {
+    background-color: #a84300 !important;
+  }
+}
