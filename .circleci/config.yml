@@ -33,39 +33,51 @@ jobs:
   # Define deployment job
   deploy:
     docker:
-      - image: cimg/node:18.19
+      - image: amazon/aws-cli  
     steps:
       - checkout
-      
-      # Install EB CLI
-      - run:
-          name: Install Elastic Beanstalk CLI
-          command: pip install awsebcli --upgrade
       
       # Set AWS Credentials
       - run:
           name: Configure AWS Credentials
           command: |
+            mkdir -p ~/.aws
+            echo "[default]" > ~/.aws/credentials
+            echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
+            echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
             echo "[default]" > ~/.aws/config
-            echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> ~/.aws/config
-            echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/config
+            echo "region=$AWS_REGION" >> ~/.aws/config
+
+      # Set environment variables for Elastic Beanstalk
+      - run:
+          name: Set Environment Variables in Elastic Beanstalk
+          command: |
+            aws elasticbeanstalk update-environment --environment-name SpiceStory-env \
+              --application-name SpiceStory-Server \
+              --region $AWS_REGION \
+              --option-settings file://<(jq -n \
+                --arg db_host "$DB_HOST" \
+                --arg db_name "$DB_NAME" \
+                --arg db_user "$DB_USER" \
+                --arg db_password "$DB_PASSWORD" \
+                --arg jwt_secret "$JWT_SECRET" \
+                --arg port "$PORT" \
+                '[{"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_HOST","Value":$db_host},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_NAME","Value":$db_name},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_USER","Value":$db_user},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_PASSWORD","Value":$db_password},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"JWT_SECRET","Value":$jwt_secret},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"PORT","Value":$port}]')
 
       # Deploy Backend to Elastic Beanstalk
       - run:
           name: Deploy to AWS Elastic Beanstalk
           command: |
             cd server
-            eb init SpiceStory-Server --platform node.js --region $AWS_REGION
-            eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                      AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                      AWS_REGION=$AWS_REGION \
-                      DB_HOST=$DB_HOST \
-                      DB_NAME=$DB_NAME \
-                      DB_USER=$DB_USER \
-                      DB_PASSWORD=$DB_PASSWORD \
-                      JWT_SECRET=$JWT_SECRET \
-                      PORT=$PORT
-            eb deploy
+            zip -r deploy.zip .
+            aws elasticbeanstalk create-application-version --application-name SpiceStory-Server \
+              --version-label "deploy-$(date +%s)" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
+            aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "deploy-$(date +%s)"
 
       # Deploy Frontend to S3
       - run:
