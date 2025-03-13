@@ -72,7 +72,8 @@ jobs:
             aws elasticbeanstalk update-environment --environment-name SpiceStory-env \
               --application-name SpiceStory-Server \
               --region $AWS_REGION \
-              --option-settings file://env.json
+              --option-settings file://env.json &  
+            disown  
 
       # Deploy Backend to Elastic Beanstalk
       - run:
