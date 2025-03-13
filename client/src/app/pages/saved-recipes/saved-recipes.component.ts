@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { RecipeCardComponent } from '../../components/recipe-card/recipe-card.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-saved-recipes',
@@ -26,7 +27,7 @@ export class SavedRecipesComponent implements OnInit {
   }
 
   fetchRecipes(): void {
-    this.http.get<any[]>('${environment.apiUrl}/api/recipes').subscribe({
+     this.http.get<any[]>(`${environment.apiUrl}/api/recipes`).subscribe({
       next: (data) => {
         if (Array.isArray(data) && data.length > 0) {
           this.recipes = data.map((recipe) => ({

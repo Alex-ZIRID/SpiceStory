@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, ValidatorFn, AbstractControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -24,7 +25,6 @@ export class RegisterComponent {
     }, { validators: this.passwordsMatchValidator() });
   }
 
- 
   passwordsMatchValidator(): ValidatorFn {
     return (control: AbstractControl) => {
       const password = control.get('password')?.value;
@@ -33,19 +33,19 @@ export class RegisterComponent {
     };
   }
 
-  
-  register() {
+  register(): void {
     if (this.registerForm.invalid) {
       return;
     }
 
     const { name, email, password } = this.registerForm.value;
-    this.http.post('${environment.apiUrl}/api/auth/register', { name, email, password }).subscribe({
+
+        this.http.post(`${environment.apiUrl}/api/auth/register`, { name, email, password }).subscribe({
       next: () => {
-        
+        // Save welcome message to session storage
         sessionStorage.setItem('welcomeMessage', `Welcome ${name}! Please log in to access our recipe world!`);
 
-        
+        // Redirect to login
         this.router.navigate(['/login']);
       },
       error: (err) => {

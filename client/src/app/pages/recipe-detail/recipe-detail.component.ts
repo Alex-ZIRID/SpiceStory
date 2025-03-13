@@ -14,7 +14,7 @@ import { CommentSectionComponent } from '../../components/comment-section/commen
 })
 export class RecipeDetailComponent implements OnInit {
   recipe: any;
-  userId: number = 1; 
+  userId: number = 1;  // Placeholder
 
   constructor(
     private route: ActivatedRoute,
@@ -30,20 +30,23 @@ export class RecipeDetailComponent implements OnInit {
   }
 
   fetchRecipe(recipeId: string): void {
+    
     this.http.get(`${environment.apiUrl}/api/recipes/${recipeId}`).subscribe({
       next: (data: any) => {
         if (data) {
           this.recipe = data;
-  
+
+          // Convert ingredients from string to array if needed
           if (typeof this.recipe.ingredients === 'string') {
             this.recipe.ingredients = this.recipe.ingredients.split(',').map((i: string) => i.trim());
           }
-  
+
+          // Convert instructions from string to array if needed
           if (typeof this.recipe.instructions === 'string') {
             this.recipe.instructions = this.recipe.instructions
               .split('.')
               .map((step: string) => step.trim())
-              .filter((step: string) => step.length > 0); 
+              .filter((step: string) => step.length > 0);
           }
         }
       },
@@ -52,13 +55,19 @@ export class RecipeDetailComponent implements OnInit {
   }
 
   deleteRecipe(): void {
+    if (!this.recipe) {
+      console.warn('No recipe to delete!');
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this recipe?')) {
-      this.http.delete(`http://localhost:5001/api/recipes/${this.recipe.id}`, {
+      
+      this.http.delete(`${environment.apiUrl}/api/recipes/${this.recipe.id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       }).subscribe({
         next: () => {
           alert('Recipe deleted successfully.');
-          this.router.navigate(['/saved-recipes']); 
+          this.router.navigate(['/recipes']);
         },
         error: (error) => {
           if (error.status === 403) {

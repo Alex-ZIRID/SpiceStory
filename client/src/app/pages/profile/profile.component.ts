@@ -26,12 +26,13 @@ export class ProfileComponent implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
-  
+
     this.fetchUserProfile();
   }
 
   fetchUserProfile(): void {
-    this.http.get('${environment.apiUrl}/api/auth/profile', {
+    
+    this.http.get(`${environment.apiUrl}/api/auth/profile`, {
       headers: { Authorization: `Bearer ${this.token}` }
     }).subscribe({
       next: (data: any) => {
@@ -50,7 +51,8 @@ export class ProfileComponent implements OnInit {
   }
 
   fetchAllRecipes(): void {
-    this.http.get('${environment.apiUrl}/api/recipes', {
+   
+    this.http.get(`${environment.apiUrl}/api/recipes`, {
       headers: { Authorization: `Bearer ${this.token}` }
     }).subscribe({
       next: (data: any) => {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-create-edit-recipe',
@@ -21,7 +22,9 @@ export class CreateEditRecipeComponent implements OnInit {
   };
   isEditing = false;
   recipeId: string | null = null;
-  apiUrl = '${environment.apiUrl}/api/recipes';  
+
+  
+  apiUrl = `${environment.apiUrl}/api/recipes`;  
   token: string | null = localStorage.getItem('token'); 
 
   constructor(
@@ -48,6 +51,8 @@ export class CreateEditRecipeComponent implements OnInit {
 
   fetchRecipe(id: string): void {
     const headers = new HttpHeaders({ Authorization: `Bearer ${this.token}` });
+
+    
     this.http.get(`${this.apiUrl}/${id}`, { headers }).subscribe({
       next: (data: any) => {
         this.recipe = data;
@@ -76,6 +81,7 @@ export class CreateEditRecipeComponent implements OnInit {
       Authorization: `Bearer ${this.token}`
     });
 
+    
     const request = this.isEditing
       ? this.http.put(`${this.apiUrl}/${this.recipeId}`, this.recipe, { headers })  
       : this.http.post(this.apiUrl, this.recipe, { headers });
