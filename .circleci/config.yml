@@ -10,7 +10,7 @@ jobs:
 
       # Install root-level dependencies 
       - run:
-          name: Install root dependencies 2
+          name: Install root dependencies
           command: |
             npm install || echo "No root-level package.json found, skipping."
 
@@ -37,11 +37,11 @@ jobs:
     steps:
       - checkout
 
-      # Install required dependencies (jq)
+      # Install required dependencies (jq & zip)
       - run:
           name: Install dependencies
           command: |
-            yum install -y jq
+            yum install -y jq zip
 
       # Set AWS Credentials
       - run:
