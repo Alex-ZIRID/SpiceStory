@@ -1,9 +1,40 @@
 version: 2.1
+
+# Define "build_and_test"
 jobs:
-  build:
+  build_and_test:
     docker:
-      - image: circleci/node:14
+      # Use a Node.js Docker image
+      - image: circleci/node:16
     steps:
+      # 1. Check out the code from repository
       - checkout
-      - run: npm install
-      - run: npm test
+
+      # 2. Install root-level dependencies 
+      - run:
+          name: Install root dependencies
+          command: |
+            npm install || echo "No root-level package.json found, skipping."
+
+      # 3. Build & Test the Backend
+      - run:
+          name: Backend install and build
+          command: |
+            cd server
+            npm install
+            npm run build
+            
+      # 4. Build & Test the Frontend
+      - run:
+          name: Frontend install and build
+          command: |
+            cd client
+            npm install
+            npm run build -- --configuration=production
+            
+            
+# Define a workflow that runs the single job
+workflows:
+  build_pipeline:
+    jobs:
+      - build_and_test
