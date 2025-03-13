@@ -36,7 +36,13 @@ jobs:
       - image: amazon/aws-cli  
     steps:
       - checkout
-      
+
+      # Install required dependencies (jq)
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y jq
+
       # Set AWS Credentials
       - run:
           name: Configure AWS Credentials
@@ -48,6 +54,17 @@ jobs:
             echo "[default]" > ~/.aws/config
             echo "region=$AWS_REGION" >> ~/.aws/config
 
+      # Create Environment Variables JSON File
+      - run:
+          name: Create environment variables file
+          command: |
+            echo '[{"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_HOST","Value":"'"$DB_HOST"'"},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_NAME","Value":"'"$DB_NAME"'"},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_USER","Value":"'"$DB_USER"'"},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_PASSWORD","Value":"'"$DB_PASSWORD"'"},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"JWT_SECRET","Value":"'"$JWT_SECRET"'"},
+                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"PORT","Value":"'"$PORT"'"}]' > env.json
+
       # Set environment variables for Elastic Beanstalk
       - run:
           name: Set Environment Variables in Elastic Beanstalk
@@ -55,19 +72,7 @@ jobs:
             aws elasticbeanstalk update-environment --environment-name SpiceStory-env \
               --application-name SpiceStory-Server \
               --region $AWS_REGION \
-              --option-settings file://<(jq -n \
-                --arg db_host "$DB_HOST" \
-                --arg db_name "$DB_NAME" \
-                --arg db_user "$DB_USER" \
-                --arg db_password "$DB_PASSWORD" \
-                --arg jwt_secret "$JWT_SECRET" \
-                --arg port "$PORT" \
-                '[{"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_HOST","Value":$db_host},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_NAME","Value":$db_name},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_USER","Value":$db_user},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_PASSWORD","Value":$db_password},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"JWT_SECRET","Value":$jwt_secret},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"PORT","Value":$port}]')
+              --option-settings file://env.json
 
       # Deploy Backend to Elastic Beanstalk
       - run:
