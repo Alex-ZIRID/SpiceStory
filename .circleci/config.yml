@@ -10,7 +10,7 @@ jobs:
 
       # Install root-level dependencies 
       - run:
-          name: Install root dependencies
+          name: Install root dependencies 2
           command: |
             npm install || echo "No root-level package.json found, skipping."
 
