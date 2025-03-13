@@ -4,37 +4,84 @@ version: 2.1
 jobs:
   build_and_test:
     docker:
-      # Use a Node.js Docker image
       - image: cimg/node:18.19
     steps:
-      # 1. Check out the code from repository
       - checkout
 
-      # 2. Install root-level dependencies 
+      # Install root-level dependencies 
       - run:
           name: Install root dependencies
           command: |
             npm install || echo "No root-level package.json found, skipping."
 
-      # 3. Build & Test the Backend
+      # Build & Test the Backend
       - run:
           name: Backend install and build
           command: |
             cd server
             npm install
             npm run build
-            
-      # 4. Build & Test the Frontend
+
+      # Build & Test the Frontend
       - run:
           name: Frontend install and build
           command: |
             cd client
             npm install
             npm run build -- --configuration=production
-            
-            
-# Define a workflow that runs the single job
+
+  # Define deployment job
+  deploy:
+    docker:
+      - image: cimg/node:18.19
+    steps:
+      - checkout
+      
+      # Install EB CLI
+      - run:
+          name: Install Elastic Beanstalk CLI
+          command: pip install awsebcli --upgrade
+      
+      # Set AWS Credentials
+      - run:
+          name: Configure AWS Credentials
+          command: |
+            echo "[default]" > ~/.aws/config
+            echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> ~/.aws/config
+            echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/config
+
+      # Deploy Backend to Elastic Beanstalk
+      - run:
+          name: Deploy to AWS Elastic Beanstalk
+          command: |
+            cd server
+            eb init SpiceStory-Server --platform node.js --region $AWS_REGION
+            eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                      AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                      AWS_REGION=$AWS_REGION \
+                      DB_HOST=$DB_HOST \
+                      DB_NAME=$DB_NAME \
+                      DB_USER=$DB_USER \
+                      DB_PASSWORD=$DB_PASSWORD \
+                      JWT_SECRET=$JWT_SECRET \
+                      PORT=$PORT
+            eb deploy
+
+      # Deploy Frontend to S3
+      - run:
+          name: Deploy Frontend to S3
+          command: |
+            aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
+
+# Define workflow
 workflows:
-  build_pipeline:
+  version: 2
+  build_and_deploy:
     jobs:
       - build_and_test
+      - deploy:
+          requires:
+            - build_and_test
+          filters:
+            branches:
+              only: main
