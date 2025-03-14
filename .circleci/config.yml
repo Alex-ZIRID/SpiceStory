@@ -19,15 +19,21 @@ jobs:
           name: Backend install and build
           command: |
             cd server
-            npm install
+            npm install --omit=dev
             npm run build
+
+            # Check if build exists
+            if [ ! -f "dist/index.js" ]; then
+              echo "Error: dist/index.js not found. Build failed."
+              exit 1
+            fi
 
       # Build & Test the Frontend
       - run:
           name: Frontend install and build
           command: |
             cd client
-            npm install
+            npm install --omit=dev
             npm run build -- --configuration=production
 
   # Define deployment job
@@ -39,11 +45,11 @@ jobs:
 
       # Install required dependencies
       - run:
-          name: Install dependencies
+          name: Install AWS CLI dependencies
           command: |
             yum install -y jq zip
 
-      # Set AWS Credentials
+      # Configure AWS Credentials
       - run:
           name: Configure AWS Credentials
           command: |
@@ -54,30 +60,9 @@ jobs:
             echo "[default]" > ~/.aws/config
             echo "region=$AWS_REGION" >> ~/.aws/config
 
-      # Create Environment Variables JSON File
-      - run:
-          name: Create environment variables file
-          command: |
-            echo '[{"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_HOST","Value":"'"$DB_HOST"'"},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_NAME","Value":"'"$DB_NAME"'"},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_USER","Value":"'"$DB_USER"'"},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_PASSWORD","Value":"'"$DB_PASSWORD"'"},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"JWT_SECRET","Value":"'"$JWT_SECRET"'"},
-                  {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"PORT","Value":"'"$PORT"'"}]' > env.json
-
-      # Set environment variables for Elastic Beanstalk
-      - run:
-          name: Set Environment Variables in Elastic Beanstalk
-          command: |
-            aws elasticbeanstalk update-environment --environment-name SpiceStory-env \
-              --application-name SpiceStory-Server \
-              --region $AWS_REGION \
-              --option-settings file://env.json &  
-            disown  
-
       # Deploy Backend to Elastic Beanstalk
       - run:
-          name: Deploy to AWS Elastic Beanstalk
+          name: Deploy Backend to AWS Elastic Beanstalk
           command: |
             cd server
             zip -r deploy.zip .
@@ -90,7 +75,7 @@ jobs:
               --version-label "$VERSION_LABEL" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
 
             echo "Waiting for Elastic Beanstalk to process the new application version..."
-            TIMEOUT=1200  # 20 minutes (in seconds)
+            TIMEOUT=1200  # 20 minutes
             INTERVAL=30
             ELAPSED=0
 
@@ -115,7 +100,7 @@ jobs:
               ((ELAPSED+=INTERVAL))
             done
 
-            # Update the environment with the new version and poll for completion
+            # Update the environment with the new version
             aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "$VERSION_LABEL" &  
             disown  
 
