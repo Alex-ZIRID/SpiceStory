@@ -81,7 +81,8 @@ jobs:
           name: Deploy Backend to Elastic Beanstalk
           command: |
             cd server
-            eb init SpiceStory-Server --region $AWS_REGION
+            # Pipe "n" to skip CodeCommit setup
+            echo n | eb init SpiceStory-Server --region $AWS_REGION
             eb use SpiceStory-env
             eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                       AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
@@ -93,6 +94,7 @@ jobs:
                       DB_PORT=$DB_PORT \
                       JWT_SECRET=$JWT_SECRET \
                       PORT=$PORT
+
             nohup eb deploy SpiceStory-env &
 
             echo "Waiting for EB deployment to complete..."
