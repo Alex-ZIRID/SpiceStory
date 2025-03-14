@@ -32,16 +32,19 @@ jobs:
 
   deploy:
     docker:
-      - image: cimg/python:3.9
+      - image: amazon/aws-cli  # Using official AWS CLI image
     steps:
       - checkout
       
-      # Install AWS CLI & EB CLI
+      # Install EB CLI
       - run:
-          name: Install AWS CLI & EB CLI
-          command: |
-            pip install --upgrade pip
-            pip install awsebcli --upgrade
+          name: Install Elastic Beanstalk CLI
+          command: pip install --upgrade pip && pip install awsebcli --upgrade
+
+      # Verify AWS CLI is installed
+      - run:
+          name: Check AWS CLI installation
+          command: aws --version
 
       # Set AWS Credentials
       - run:
