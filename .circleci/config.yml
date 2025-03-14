@@ -6,21 +6,27 @@ jobs:
       - image: cimg/node:18.19
     steps:
       - checkout
+
+      # Optional: install any root-level package.json dependencies
       - run:
           name: Install root dependencies
           command: |
-            npm install || echo "No root-level package.json found, skipping."
+            npm ci || echo "No root-level package.json found, skipping."
+
+      # Build server
       - run:
-          name: Backend install and build
+          name: Install & build server
           command: |
             cd server
-            npm install
+            npm ci
             npm run build
+
+      # Build client
       - run:
-          name: Frontend install and build
+          name: Install & build client
           command: |
             cd client
-            npm install
+            npm ci
             npm run build -- --configuration=production
 
   deploy:
@@ -28,10 +34,14 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+
+      # Install zip and jq for EB operations
       - run:
           name: Install dependencies
           command: |
             yum install -y jq zip
+
+      # Configure AWS credentials
       - run:
           name: Configure AWS Credentials
           command: |
@@ -41,6 +51,8 @@ jobs:
             echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
             echo "[default]" > ~/.aws/config
             echo "region=$AWS_REGION" >> ~/.aws/config
+
+      # Create env.json in the project root
       - run:
           name: Create environment variables file
           command: |
@@ -51,26 +63,27 @@ jobs:
                   {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"JWT_SECRET","Value":"'"$JWT_SECRET"'"},
                   {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"PORT","Value":"'"$PORT"'"}]' > env.json
 
+      # Deploy the server and update EB environment
       - run:
-          name: Deploy to AWS Elastic Beanstalk
+          name: Deploy backend to Elastic Beanstalk
           no_output_timeout: 30m
           command: |
-            # Zip the backend code
+            # Zip server code
             cd server
             zip -r deploy.zip .
             aws s3 cp deploy.zip s3://$FRONTEND_S3_BUCKET/deploy.zip
             cd ..
 
-            VERSION_LABEL="deploy-$(date +%s)"
-
             # Create a new EB application version
+            VERSION_LABEL="deploy-$(date +%s)"
             aws elasticbeanstalk create-application-version \
               --application-name SpiceStory-Server \
               --version-label "$VERSION_LABEL" \
               --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip \
               --region $AWS_REGION
 
-            echo "Updating EB environment with new version and env vars..."
+            # Update environment (new version + environment variables)
+            echo "Updating environment with new version and env vars..."
             aws elasticbeanstalk update-environment \
               --environment-name SpiceStory-env \
               --application-name SpiceStory-Server \
@@ -78,8 +91,8 @@ jobs:
               --option-settings file://env.json \
               --region $AWS_REGION
 
-            # First poll for the application version to become "Processed"
-            TIMEOUT=1200  # 20 minutes
+            # Poll for the application version to be 'Processed'
+            TIMEOUT=1200
             INTERVAL=30
             ELAPSED=0
             while true; do
@@ -89,21 +102,20 @@ jobs:
                 --query "ApplicationVersions[0].Status" \
                 --output text \
                 --region $AWS_REGION)
-              echo "Version status: $STATUS (elapsed: $ELAPSED sec)"
-
+              echo "AppVersion Status: $STATUS (elapsed: $ELAPSED s)"
               if [ "$STATUS" == "Processed" ]; then
-                echo "✅ Version processed."
+                echo "Application version processed."
                 break
               fi
               if [ $ELAPSED -ge $TIMEOUT ]; then
-                echo "❌ Timeout while waiting for version to be processed."
+                echo "Timeout waiting for version to be processed."
                 exit 1
               fi
               sleep $INTERVAL
               ((ELAPSED+=INTERVAL))
             done
 
-            # Now poll for the environment to become "Ready"
+            # Poll for the environment to reach 'Ready' status
             ELAPSED=0
             while true; do
               ENV_STATUS=$(aws elasticbeanstalk describe-environments \
@@ -111,22 +123,22 @@ jobs:
                 --query 'Environments[0].Status' \
                 --output text \
                 --region $AWS_REGION)
-              echo "Environment status: $ENV_STATUS (elapsed: $ELAPSED sec)"
-
+              echo "Environment Status: $ENV_STATUS (elapsed: $ELAPSED s)"
               if [ "$ENV_STATUS" == "Ready" ]; then
-                echo "✅ Environment is Ready."
+                echo "Environment is Ready."
                 break
               fi
               if [ $ELAPSED -ge $TIMEOUT ]; then
-                echo "❌ Timeout while waiting for environment to be Ready."
+                echo "Timeout waiting for environment to become Ready."
                 exit 1
               fi
               sleep $INTERVAL
               ((ELAPSED+=INTERVAL))
             done
 
+      # Deploy the client build to S3
       - run:
-          name: Deploy Frontend to S3
+          name: Deploy frontend to S3
           command: |
             aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
 
