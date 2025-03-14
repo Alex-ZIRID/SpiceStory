@@ -55,62 +55,70 @@ jobs:
           name: Deploy to AWS Elastic Beanstalk
           no_output_timeout: 30m
           command: |
+            # Zip the backend code
             cd server
             zip -r deploy.zip .
             aws s3 cp deploy.zip s3://$FRONTEND_S3_BUCKET/deploy.zip
+            cd ..
 
             VERSION_LABEL="deploy-$(date +%s)"
+
+            # Create a new EB application version
             aws elasticbeanstalk create-application-version \
               --application-name SpiceStory-Server \
               --version-label "$VERSION_LABEL" \
-              --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
+              --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip \
+              --region $AWS_REGION
 
-            echo "Updating EB environment with new version and environment variables..."
+            echo "Updating EB environment with new version and env vars..."
             aws elasticbeanstalk update-environment \
               --environment-name SpiceStory-env \
+              --application-name SpiceStory-Server \
               --version-label "$VERSION_LABEL" \
               --option-settings file://env.json \
               --region $AWS_REGION
 
-            echo "Waiting for application version to be processed..."
-            TIMEOUT=1200
+            # First poll for the application version to become "Processed"
+            TIMEOUT=1200  # 20 minutes
             INTERVAL=30
             ELAPSED=0
             while true; do
-              VERSION_STATUS=$(aws elasticbeanstalk describe-application-versions \
+              STATUS=$(aws elasticbeanstalk describe-application-versions \
                 --application-name SpiceStory-Server \
                 --version-label "$VERSION_LABEL" \
                 --query "ApplicationVersions[0].Status" \
-                --output text)
-              echo "Application version status: $VERSION_STATUS (elapsed: $ELAPSED sec)"
-              if [ "$VERSION_STATUS" == "Processed" ]; then
-                echo "✅ Application version processed."
+                --output text \
+                --region $AWS_REGION)
+              echo "Version status: $STATUS (elapsed: $ELAPSED sec)"
+
+              if [ "$STATUS" == "Processed" ]; then
+                echo "✅ Version processed."
                 break
               fi
               if [ $ELAPSED -ge $TIMEOUT ]; then
-                echo "❌ Timeout reached while waiting for application version to be processed."
-                aws elasticbeanstalk describe-events --environment-name SpiceStory-env --max-items 10
+                echo "❌ Timeout while waiting for version to be processed."
                 exit 1
               fi
               sleep $INTERVAL
               ((ELAPSED+=INTERVAL))
             done
 
-            echo "Waiting for EB environment to become Ready..."
+            # Now poll for the environment to become "Ready"
             ELAPSED=0
             while true; do
               ENV_STATUS=$(aws elasticbeanstalk describe-environments \
                 --environment-names SpiceStory-env \
                 --query 'Environments[0].Status' \
-                --output text)
+                --output text \
+                --region $AWS_REGION)
               echo "Environment status: $ENV_STATUS (elapsed: $ELAPSED sec)"
+
               if [ "$ENV_STATUS" == "Ready" ]; then
-                echo "✅ EB environment is Ready."
+                echo "✅ Environment is Ready."
                 break
               fi
               if [ $ELAPSED -ge $TIMEOUT ]; then
-                echo "❌ Timeout reached while waiting for environment to be Ready."
-                aws elasticbeanstalk describe-events --environment-name SpiceStory-env --max-items 10
+                echo "❌ Timeout while waiting for environment to be Ready."
                 exit 1
               fi
               sleep $INTERVAL
