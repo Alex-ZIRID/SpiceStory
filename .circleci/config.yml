@@ -17,7 +17,7 @@ jobs:
               echo "No root package.json found, skipping."
             fi
 
-      # Build and test the backend
+      # Build the backend
       - run:
           name: Build Backend
           command: |
@@ -26,7 +26,7 @@ jobs:
             npm install -g typescript
             npm run build
 
-      # Build and test the frontend
+      # Build the frontend
       - run:
           name: Build Frontend
           command: |
@@ -52,7 +52,7 @@ jobs:
     steps:
       - checkout
 
-      # Install required utilities and the EB CLI (pinned version)
+      # Install required utilities and EB CLI (pinned version)
       - run:
           name: Install dependencies
           command: |
@@ -76,12 +76,11 @@ jobs:
               echo "region=$AWS_REGION"
             } > ~/.aws/config
 
-      # Deploy backend to Elastic Beanstalk
       - run:
           name: Deploy Backend to Elastic Beanstalk
           command: |
             cd server
-            # Pipe "n" to skip CodeCommit setup
+            # Pipe 'n' to skip CodeCommit prompts in non-interactive environments
             echo n | eb init SpiceStory-Server --region $AWS_REGION
             eb use SpiceStory-env
             eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
@@ -95,28 +94,9 @@ jobs:
                       JWT_SECRET=$JWT_SECRET \
                       PORT=$PORT
 
-            nohup eb deploy SpiceStory-env &
+            # Run eb deploy in the foreground with a 30-minute timeout
+            eb deploy SpiceStory-env --timeout 30
 
-            echo "Waiting for EB deployment to complete..."
-            TIMEOUT=1800
-            INTERVAL=30
-            ELAPSED=0
-            while true; do
-              STATUS=$(eb health SpiceStory-env | grep -i "Green")
-              if [ -n "$STATUS" ]; then
-                echo "✅ Elastic Beanstalk environment is healthy."
-                break
-              fi
-              if [ $ELAPSED -ge $TIMEOUT ]; then
-                echo "❌ Timeout reached ($TIMEOUT seconds). Exiting."
-                exit 1
-              fi
-              echo "Checking health again in ${INTERVAL}s..."
-              sleep $INTERVAL
-              ELAPSED=$((ELAPSED + INTERVAL))
-            done
-
-      # Deploy frontend to S3
       - run:
           name: Deploy Frontend to S3
           command: |
