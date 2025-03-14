@@ -52,14 +52,17 @@ jobs:
     steps:
       - checkout
 
-      # Install utilities and EB CLI so we can attach the workspace and deploy
+      # Install required utilities and the EB CLI (pinned version)
       - run:
           name: Install dependencies
           command: |
+            set -e
             yum update -y
             yum install -y tar gzip zip unzip python3 python3-pip
-            pip3 install awsebcli
+            python3 -m pip install --upgrade pip
+            python3 -m pip install awsebcli==3.20.3
 
+      # Attach workspace (requires tar/gzip)
       - attach_workspace:
           at: .
 
@@ -67,10 +70,12 @@ jobs:
           name: Configure AWS Credentials
           command: |
             mkdir -p ~/.aws
-            echo "[default]" > ~/.aws/config
-            echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> ~/.aws/config
-            echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/config
-            echo "region=$AWS_REGION" >> ~/.aws/config
+            {
+              echo "[default]"
+              echo "aws_access_key_id=$AWS_ACCESS_KEY_ID"
+              echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY"
+              echo "region=$AWS_REGION"
+            } > ~/.aws/config
 
       # Deploy backend to Elastic Beanstalk
       - run:
