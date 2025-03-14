@@ -1,28 +1,21 @@
 version: 2.1
 
-# Define "build_and_test"
 jobs:
   build_and_test:
     docker:
       - image: cimg/node:18.19
     steps:
       - checkout
-
-      # Install root-level dependencies 
       - run:
           name: Install root dependencies
           command: |
             npm install || echo "No root-level package.json found, skipping."
-
-      # Build & Test the Backend
       - run:
           name: Backend install and build
           command: |
             cd server
             npm install
             npm run build
-
-      # Build & Test the Frontend
       - run:
           name: Frontend install and build
           command: |
@@ -30,20 +23,15 @@ jobs:
             npm install
             npm run build -- --configuration=production
 
-  # Define deployment job
   deploy:
     docker:
-      - image: amazon/aws-cli  
+      - image: amazon/aws-cli
     steps:
       - checkout
-
-      # Install required dependencies
       - run:
           name: Install dependencies
           command: |
             yum install -y jq zip
-
-      # Set AWS Credentials
       - run:
           name: Configure AWS Credentials
           command: |
@@ -53,8 +41,6 @@ jobs:
             echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
             echo "[default]" > ~/.aws/config
             echo "region=$AWS_REGION" >> ~/.aws/config
-
-      # Create Environment Variables JSON File
       - run:
           name: Create environment variables file
           command: |
@@ -64,28 +50,21 @@ jobs:
                   {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"DB_PASSWORD","Value":"'"$DB_PASSWORD"'"},
                   {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"JWT_SECRET","Value":"'"$JWT_SECRET"'"},
                   {"Namespace":"aws:elasticbeanstalk:application:environment","OptionName":"PORT","Value":"'"$PORT"'"}]' > env.json
-
-      # Set environment variables for Elastic Beanstalk
       - run:
           name: Set Environment Variables in Elastic Beanstalk
           command: |
             aws elasticbeanstalk update-environment --environment-name SpiceStory-env \
               --application-name SpiceStory-Server \
               --region $AWS_REGION \
-              --option-settings file://env.json &  
-            disown  
-
-      # Deploy Backend to Elastic Beanstalk
+              --option-settings file://env.json
       - run:
           name: Deploy to AWS Elastic Beanstalk
+          no_output_timeout: 30m
           command: |
             cd server
             zip -r deploy.zip .
-
             aws s3 cp deploy.zip s3://$FRONTEND_S3_BUCKET/deploy.zip
-
             VERSION_LABEL="deploy-$(date +%s)"
-
             aws elasticbeanstalk create-application-version --application-name SpiceStory-Server \
               --version-label "$VERSION_LABEL" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
 
@@ -93,61 +72,48 @@ jobs:
             TIMEOUT=1200  # 20 minutes (in seconds)
             INTERVAL=30
             ELAPSED=0
-
             while true; do
               STATUS=$(aws elasticbeanstalk describe-application-versions --application-name SpiceStory-Server \
                       --version-label "$VERSION_LABEL" --query "ApplicationVersions[0].Status" --output text)
-
               echo "Current status: $STATUS"
-
               if [ "$STATUS" == "Processed" ]; then
                 echo "✅ Application version is ready. Proceeding with deployment."
                 break
               fi
-
               if [[ $ELAPSED -ge $TIMEOUT ]]; then
                 echo "❌ Timeout reached ($TIMEOUT seconds). Exiting."
                 exit 1
               fi
-
               echo "Application version not ready yet. Checking again in ${INTERVAL}s..."
               sleep $INTERVAL  
               ((ELAPSED+=INTERVAL))
             done
 
-            # Update the environment with the new version and poll for completion
-            aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "$VERSION_LABEL" &  
-            disown  
+            echo "Updating environment with new application version..."
+            aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "$VERSION_LABEL"
 
             echo "Waiting for environment to become Ready..."
             ELAPSED=0
             while true; do
               ENV_STATUS=$(aws elasticbeanstalk describe-environments --environment-names SpiceStory-env --query 'Environments[0].Status' --output text)
-
               echo "Current Environment Status: $ENV_STATUS"
-
               if [ "$ENV_STATUS" == "Ready" ]; then
                 echo "✅ Elastic Beanstalk environment is ready."
                 break
               fi
-
               if [[ $ELAPSED -ge $TIMEOUT ]]; then
                 echo "❌ Timeout reached ($TIMEOUT seconds). Exiting."
                 exit 1
               fi
-
               echo "Environment not ready yet. Checking again in ${INTERVAL}s..."
               sleep $INTERVAL  
               ((ELAPSED+=INTERVAL))
             done
-
-      # Deploy Frontend to S3
       - run:
           name: Deploy Frontend to S3
           command: |
             aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
 
-# Define workflow
 workflows:
   version: 2
   build_and_deploy:
