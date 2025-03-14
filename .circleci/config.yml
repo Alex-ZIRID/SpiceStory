@@ -7,36 +7,48 @@ jobs:
     steps:
       - checkout
 
-      # Install root-level dependencies
+      # Optional: Install any root-level dependencies if needed
       - run:
-          name: Install root dependencies
+          name: Install Root Dependencies (if any)
           command: |
-            npm install || echo "No root-level package.json found, skipping."
+            if [ -f package.json ]; then npm install; else echo "No root package.json found, skipping."; fi
 
-      # Build & Test the Backend
+      # Build and test the backend
       - run:
-          name: Backend install and build
+          name: Build Backend
           command: |
             cd server
             npm install
-            npm install -g typescript  # Ensure TypeScript is installed
+            npm install -g typescript
             npm run build
 
-      # Build & Test the Frontend
+      # Build and test the frontend
       - run:
-          name: Frontend install and build
+          name: Build Frontend
           command: |
             cd client
             npm install
             npm run build -- --configuration=production
 
+      # Archive backend files for deployment
+      - run:
+          name: Archive Backend Files
+          command: |
+            cd server
+            zip -r backend.zip .
+      - persist_to_workspace:
+          root: .
+          paths:
+            - server/backend.zip
+            - client/dist/spicestory
+
   deploy:
     docker:
-      - image: amazon/aws-cli  # ✅ Pre-installed AWS CLI
+      - image: amazon/aws-cli
     steps:
       - checkout
-
-      # Set AWS Credentials
+      - attach_workspace:
+          at: .
       - run:
           name: Configure AWS Credentials
           command: |
@@ -46,12 +58,12 @@ jobs:
             echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/config
             echo "region=$AWS_REGION" >> ~/.aws/config
 
-      # Deploy Backend to Elastic Beanstalk
+      # Deploy backend to Elastic Beanstalk
       - run:
-          name: Deploy to AWS Elastic Beanstalk
+          name: Deploy Backend to Elastic Beanstalk
           command: |
             cd server
-            eb init SpiceStory-Server --platform node.js --region $AWS_REGION
+            eb init SpiceStory-Server --platform "Node.js 18 running on 64bit Amazon Linux" --region $AWS_REGION
             eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
                       AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
                       AWS_REGION=$AWS_REGION \
@@ -59,43 +71,42 @@ jobs:
                       DB_NAME=$DB_NAME \
                       DB_USER=$DB_USER \
                       DB_PASSWORD=$DB_PASSWORD \
-                      JWT_SECRET=$JWT_SECRET \
                       DB_PORT=$DB_PORT \
-                      PORT=5001  # Ensure application listens on port 5001
-            nohup eb deploy &  # Prevent CircleCI from timing out
-
-            echo "Waiting for deployment to complete..."
-            TIMEOUT=1800  # 30 minutes
+                      JWT_SECRET=$JWT_SECRET \
+                      PORT=$PORT
+            nohup eb deploy SpiceStory-env & 
+            echo "Waiting for EB deployment to complete..."
+            TIMEOUT=1800
             INTERVAL=30
             ELAPSED=0
             while true; do
-              STATUS=$(eb health | grep -i "Green")
-              if [[ ! -z "$STATUS" ]]; then
+              STATUS=$(eb health SpiceStory-env | grep -i "Green")
+              if [ -n "$STATUS" ]; then
                 echo "✅ Elastic Beanstalk environment is healthy."
                 break
               fi
-
-              if [[ $ELAPSED -ge $TIMEOUT ]]; then
+              if [ $ELAPSED -ge $TIMEOUT ]; then
                 echo "❌ Timeout reached ($TIMEOUT seconds). Exiting."
                 exit 1
               fi
-
               echo "Checking health again in ${INTERVAL}s..."
-              sleep $INTERVAL  
-              ((ELAPSED+=INTERVAL))
+              sleep $INTERVAL
+              ELAPSED=$((ELAPSED + INTERVAL))
             done
 
-      # Deploy Frontend to S3
+      # Deploy frontend to S3
       - run:
           name: Deploy Frontend to S3
           command: |
             aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
 
 workflows:
-  version: 2
   build_and_deploy:
     jobs:
-      - build_and_test
+      - build_and_test:
+          filters:
+            branches:
+              only: main
       - deploy:
           requires:
             - build_and_test
