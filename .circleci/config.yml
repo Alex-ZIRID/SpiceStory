@@ -81,8 +81,15 @@ jobs:
           command: |
             cd server
             zip -r deploy.zip .
+
+            
+            aws s3 cp deploy.zip s3://$FRONTEND_S3_BUCKET/deploy.zip
+
+            
             aws elasticbeanstalk create-application-version --application-name SpiceStory-Server \
               --version-label "deploy-$(date +%s)" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
+
+            
             aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "deploy-$(date +%s)"
 
       # Deploy Frontend to S3
