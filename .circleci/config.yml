@@ -34,7 +34,6 @@ jobs:
   deploy:
     docker:
       - image: amazon/aws-cli  
-    timeout-minutes: 20  # Extend timeout to allow deployment completion
     steps:
       - checkout
 
@@ -91,7 +90,7 @@ jobs:
               --version-label "$VERSION_LABEL" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
 
             echo "Waiting for Elastic Beanstalk to process the new application version..."
-            TIMEOUT=900  # 15 minutes
+            TIMEOUT=1200  # 20 minutes (in seconds)
             INTERVAL=30
             ELAPSED=0
 
