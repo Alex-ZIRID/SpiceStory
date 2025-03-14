@@ -19,7 +19,7 @@ jobs:
           command: |
             cd server
             npm install
-            npm install -g typescript  
+            npm install -g typescript  # Ensure TypeScript is installed
             npm run build
 
       # Build & Test the Frontend
@@ -32,20 +32,9 @@ jobs:
 
   deploy:
     docker:
-      - image: amazonlinux:2  
+      - image: amazon/aws-cli  # ✅ Pre-installed AWS CLI
     steps:
       - checkout
-
-      # Install AWS CLI and EB CLI
-      - run:
-          name: Install AWS CLI & EB CLI
-          command: |
-            yum install -y tar gzip
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            ./aws/install
-            yum install -y python3-pip
-            pip3 install --upgrade awsebcli
 
       # Set AWS Credentials
       - run:
@@ -72,8 +61,8 @@ jobs:
                       DB_PASSWORD=$DB_PASSWORD \
                       JWT_SECRET=$JWT_SECRET \
                       DB_PORT=$DB_PORT \
-                      PORT=5001  
-            nohup eb deploy &  
+                      PORT=5001  # Ensure application listens on port 5001
+            nohup eb deploy &  # Prevent CircleCI from timing out
 
             echo "Waiting for deployment to complete..."
             TIMEOUT=1800  # 30 minutes
