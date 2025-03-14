@@ -37,7 +37,7 @@ jobs:
     steps:
       - checkout
 
-      # Install required dependencies (jq & zip)
+      # Install required dependencies
       - run:
           name: Install dependencies
           command: |
@@ -86,11 +86,31 @@ jobs:
             aws s3 cp deploy.zip s3://$FRONTEND_S3_BUCKET/deploy.zip
 
             
-            aws elasticbeanstalk create-application-version --application-name SpiceStory-Server \
-              --version-label "deploy-$(date +%s)" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
+            VERSION_LABEL="deploy-$(date +%s)"
 
             
-            aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "deploy-$(date +%s)"
+            aws elasticbeanstalk create-application-version --application-name SpiceStory-Server \
+              --version-label "$VERSION_LABEL" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
+
+            
+            echo "Waiting for Elastic Beanstalk to process the new application version..."
+            while true; do
+              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name SpiceStory-Server \
+                      --version-label "$VERSION_LABEL" --query "ApplicationVersions[0].Status" --output text)
+
+              echo "Current status: $STATUS"
+
+              if [ "$STATUS" == "Processed" ]; then
+                echo "Application version is ready. Proceeding with deployment."
+                break
+              fi
+
+              echo "Application version not ready yet. Waiting..."
+              sleep 20  
+            done
+
+            
+            aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "$VERSION_LABEL"
 
       # Deploy Frontend to S3
       - run:
