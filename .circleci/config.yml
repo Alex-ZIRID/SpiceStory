@@ -1,6 +1,5 @@
 version: 2.1
 
-# Define "build_and_test"
 jobs:
   build_and_test:
     docker:
@@ -19,37 +18,32 @@ jobs:
           name: Backend install and build
           command: |
             cd server
-            npm install --omit=dev
+            npm install
+            npx tsc  # Use local TypeScript installation
             npm run build
-
-            # Check if build exists
-            if [ ! -f "dist/index.js" ]; then
-              echo "Error: dist/index.js not found. Build failed."
-              exit 1
-            fi
 
       # Build & Test the Frontend
       - run:
           name: Frontend install and build
           command: |
             cd client
-            npm install --omit=dev
+            npm install
             npm run build -- --configuration=production
 
-  # Define deployment job
   deploy:
     docker:
-      - image: amazon/aws-cli  
+      - image: cimg/python:3.9
     steps:
       - checkout
-
-      # Install required dependencies
+      
+      # Install AWS CLI & EB CLI
       - run:
-          name: Install AWS CLI dependencies
+          name: Install AWS CLI & EB CLI
           command: |
-            yum install -y jq zip
+            pip install --upgrade pip
+            pip install awsebcli --upgrade
 
-      # Configure AWS Credentials
+      # Set AWS Credentials
       - run:
           name: Configure AWS Credentials
           command: |
@@ -62,67 +56,54 @@ jobs:
 
       # Deploy Backend to Elastic Beanstalk
       - run:
-          name: Deploy Backend to AWS Elastic Beanstalk
+          name: Deploy to AWS Elastic Beanstalk
           command: |
             cd server
-            zip -r deploy.zip .
+            eb init SpiceStory-Server --platform node.js --region $AWS_REGION
+            
+            eb setenv AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                      AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                      AWS_REGION=$AWS_REGION \
+                      DB_HOST=$DB_HOST \
+                      DB_NAME=$DB_NAME \
+                      DB_USER=$DB_USER \
+                      DB_PASSWORD=$DB_PASSWORD \
+                      JWT_SECRET=$JWT_SECRET \
+                      PORT=$PORT
 
-            aws s3 cp deploy.zip s3://$FRONTEND_S3_BUCKET/deploy.zip
+            eb deploy &  
+            DEPLOY_PID=$!
 
-            VERSION_LABEL="deploy-$(date +%s)"
-
-            aws elasticbeanstalk create-application-version --application-name SpiceStory-Server \
-              --version-label "$VERSION_LABEL" --source-bundle S3Bucket=$FRONTEND_S3_BUCKET,S3Key=deploy.zip
-
-            echo "Waiting for Elastic Beanstalk to process the new application version..."
-            TIMEOUT=1200  # 20 minutes
+            echo "Waiting for Elastic Beanstalk deployment to complete..."
+            TIMEOUT=1200  # 20 minutes max
             INTERVAL=30
             ELAPSED=0
 
-            while true; do
-              STATUS=$(aws elasticbeanstalk describe-application-versions --application-name SpiceStory-Server \
-                      --version-label "$VERSION_LABEL" --query "ApplicationVersions[0].Status" --output text)
-
-              echo "Current status: $STATUS"
-
-              if [ "$STATUS" == "Processed" ]; then
-                echo "✅ Application version is ready. Proceeding with deployment."
-                break
-              fi
-
+            while ps -p $DEPLOY_PID > /dev/null; do
+              echo "EB deployment is still running..."
+              sleep $INTERVAL
+              ((ELAPSED+=INTERVAL))
               if [[ $ELAPSED -ge $TIMEOUT ]]; then
-                echo "❌ Timeout reached ($TIMEOUT seconds). Exiting."
+                echo "❌ Deployment timed out after $TIMEOUT seconds."
                 exit 1
               fi
-
-              echo "Application version not ready yet. Checking again in ${INTERVAL}s..."
-              sleep $INTERVAL  
-              ((ELAPSED+=INTERVAL))
             done
 
-            # Update the environment with the new version
-            aws elasticbeanstalk update-environment --environment-name SpiceStory-env --version-label "$VERSION_LABEL" &  
-            disown  
-
-            echo "Waiting for environment to become Ready..."
-            ELAPSED=0
+            echo "Checking environment health..."
             while true; do
-              ENV_STATUS=$(aws elasticbeanstalk describe-environments --environment-names SpiceStory-env --query 'Environments[0].Status' --output text)
+              ENV_STATUS=$(aws elasticbeanstalk describe-environments --environment-names SpiceStory-env --query 'Environments[0].Health' --output text)
 
-              echo "Current Environment Status: $ENV_STATUS"
+              echo "Current Environment Health: $ENV_STATUS"
 
-              if [ "$ENV_STATUS" == "Ready" ]; then
-                echo "✅ Elastic Beanstalk environment is ready."
+              if [ "$ENV_STATUS" == "Green" ]; then
+                echo "✅ Environment is healthy. Deployment successful."
                 break
-              fi
-
-              if [[ $ELAPSED -ge $TIMEOUT ]]; then
+              elif [[ $ELAPSED -ge $TIMEOUT ]]; then
                 echo "❌ Timeout reached ($TIMEOUT seconds). Exiting."
                 exit 1
               fi
 
-              echo "Environment not ready yet. Checking again in ${INTERVAL}s..."
-              sleep $INTERVAL  
+              sleep $INTERVAL
               ((ELAPSED+=INTERVAL))
             done
 
@@ -132,7 +113,6 @@ jobs:
           command: |
             aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
 
-# Define workflow
 workflows:
   version: 2
   build_and_deploy:
