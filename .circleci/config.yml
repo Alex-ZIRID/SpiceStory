@@ -11,7 +11,11 @@ jobs:
       - run:
           name: Install Root Dependencies (if any)
           command: |
-            if [ -f package.json ]; then npm install; else echo "No root package.json found, skipping."; fi
+            if [ -f package.json ]; then
+              npm install
+            else
+              echo "No root package.json found, skipping."
+            fi
 
       # Build and test the backend
       - run:
@@ -47,8 +51,17 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+
+      # Install 'tar' so CircleCI can attach workspace
+      - run:
+          name: Install tar
+          command: |
+            yum update -y
+            yum install -y tar
+
       - attach_workspace:
           at: .
+
       - run:
           name: Configure AWS Credentials
           command: |
@@ -74,7 +87,8 @@ jobs:
                       DB_PORT=$DB_PORT \
                       JWT_SECRET=$JWT_SECRET \
                       PORT=$PORT
-            nohup eb deploy SpiceStory-env & 
+            nohup eb deploy SpiceStory-env &
+
             echo "Waiting for EB deployment to complete..."
             TIMEOUT=1800
             INTERVAL=30
@@ -101,6 +115,7 @@ jobs:
             aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
 
 workflows:
+  version: 2
   build_and_deploy:
     jobs:
       - build_and_test:
