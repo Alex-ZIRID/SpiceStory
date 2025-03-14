@@ -52,12 +52,13 @@ jobs:
     steps:
       - checkout
 
-      # Install 'tar' so CircleCI can attach workspace
+      # Install utilities and EB CLI so we can attach the workspace and deploy
       - run:
-          name: Install tar
+          name: Install dependencies
           command: |
             yum update -y
-            yum install -y tar
+            yum install -y tar gzip zip unzip python3 python3-pip
+            pip3 install awsebcli
 
       - attach_workspace:
           at: .
@@ -115,7 +116,6 @@ jobs:
             aws s3 sync client/dist/spicestory s3://$FRONTEND_S3_BUCKET --delete
 
 workflows:
-  version: 2
   build_and_deploy:
     jobs:
       - build_and_test:
